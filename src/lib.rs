@@ -35,13 +35,12 @@ fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
             let fields = fields
                 .iter()
                 .filter(|x| match x {
-                    Field { ident: Some(x), .. } => !omits.contains(&x.to_string()),
+                    Field { ident: Some(x), .. } => !omits.contains(x),
                     _ => true,
                 })
                 .map(|field| quote!(#field))
                 .collect::<Vec<_>>();
 
-            let name = Ident::new(&name, item.span());
             quote! {
                 struct #name {
                     #(#fields,)*
@@ -57,7 +56,7 @@ fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
     Ok(gen.into())
 }
 
-fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(String, Vec<String>)>, syn::Error> {
+fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(Ident, Vec<Ident>)>, syn::Error> {
     attrs
         .iter()
         .filter_map(|x| {
@@ -68,14 +67,25 @@ fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(String, Vec<String>)>, s
             }
         })
         .map(|x| {
-            let values: Vec<String> = x
+            let values: Vec<Ident> = x
                 .tokens
-                .to_string()
-                .split(['(', ')', ',', ' '])
-                .filter(|x| !x.is_empty())
-                .map(ToString::to_string)
+                .clone()
+                .into_iter()
+                .flat_map(|x| match x {
+                    quote::__private::TokenTree::Ident(x) => vec![x],
+                    quote::__private::TokenTree::Group(x) => x
+                        .stream()
+                        .into_iter()
+                        .filter_map(|y| match y {
+                            quote::__private::TokenTree::Ident(x) => Some(x),
+                            _ => None,
+                        })
+                        .collect(),
+                    _ => vec![],
+                })
                 .collect();
 
+            dbg!(&values);
             match &values[..] {
                 [first, omits @ ..] => Ok((first.to_owned(), omits.to_vec())),
                 _ => Err(syn::Error::new_spanned(x.path.clone(), "invalid syntax")),
