@@ -1,7 +1,7 @@
 use evil::Omit;
 
 #[derive(Omit, Debug)]
-#[omit(NewHoge, id)]
+#[omit(NewHoge, id, derive(Debug, Clone))]
 #[omit(OldHoge, age)]
 struct Hoge {
     pub id: u64,
@@ -18,8 +18,8 @@ fn test_hoge() {
 #[test]
 fn test_new_hoge() {
     let hoge = NewHoge { age: 0 };
-    // dbg!(&hoge);
-    assert_eq!(hoge.age, 0);
+    dbg!(&hoge);
+    assert_eq!(hoge.clone().age, 0);
 }
 
 // #[test]
