@@ -1,10 +1,8 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse_macro_input, spanned::Spanned, Attribute, DataStruct, DeriveInput, Field, Fields, Ident,
-};
+use syn::{parse_macro_input, Attribute, DataStruct, DeriveInput, Field, Fields, Ident};
 
-#[proc_macro_derive(Omit, attributes(omit, evil))]
+#[proc_macro_derive(Omit, attributes(omit))]
 pub fn derive_omit(input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as DeriveInput);
     match gen_omitted_type(item) {
@@ -53,11 +51,13 @@ fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
         #(#type_tokens)*
     };
 
+    dbg!(gen.to_string());
+
     Ok(gen.into())
 }
 
 fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(Ident, Vec<Ident>)>, syn::Error> {
-    attrs
+    dbg!(attrs)
         .iter()
         .filter_map(|x| {
             if x.path.is_ident("omit") {
@@ -85,7 +85,6 @@ fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(Ident, Vec<Ident>)>, syn
                 })
                 .collect();
 
-            dbg!(&values);
             match &values[..] {
                 [first, omits @ ..] => Ok((first.to_owned(), omits.to_vec())),
                 _ => Err(syn::Error::new_spanned(x.path.clone(), "invalid syntax")),
