@@ -57,7 +57,7 @@ fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
 }
 
 fn extract_new_type(attrs: &[Attribute]) -> Result<Vec<(Ident, Vec<Ident>)>, syn::Error> {
-    dbg!(attrs)
+    attrs
         .iter()
         .filter_map(|x| {
             if x.path.is_ident("omit") {
