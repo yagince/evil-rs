@@ -34,15 +34,15 @@ pub(crate) fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Er
                 .map(|field| quote!(#field))
                 .collect::<Vec<_>>();
 
-            let derive = match opt.derive_option {
-                None => quote!(),
-                Some(x) => {
+            let derive = opt
+                .derive_option
+                .map(|x| {
                     let derives = x.derives;
                     quote! {
                         #[derive(#(#derives),*)]
                     }
-                }
-            };
+                })
+                .unwrap_or_default();
 
             let name = opt.name;
             quote! {
