@@ -10,21 +10,21 @@ struct Hoge {
 }
 
 #[test]
-fn test_hoge() {
+fn test_omit_hoge() {
     let hoge = Hoge { id: 1000, age: 0 };
     assert_eq!(hoge.id, 1000);
     assert_eq!(hoge.age, 0);
 }
 
 #[test]
-fn test_new_hoge() {
+fn test_omit_new_hoge() {
     let hoge = NewHoge { age: 0 };
     dbg!(&hoge);
     assert_eq!(hoge.clone().age, 0);
 }
 
 #[test]
-fn test_validator() {
+fn test_omit_with_validator() {
     use validator::Validate;
 
     #[derive(Omit, Debug, Validate)]
