@@ -28,7 +28,7 @@ fn test_validator() {
     use validator::Validate;
 
     #[derive(Omit, Debug, Validate)]
-    #[omit(NewData, id, derive(Debug, Validate))]
+    #[omit(NewData, id, derive(std::fmt::Debug, Validate))]
     struct Data {
         #[validate(range(min = 1))]
         pub id: u64,
@@ -42,9 +42,3 @@ fn test_validator() {
     let data = NewData { age: 1 };
     assert_matches!(data.validate(), Err(_));
 }
-// #[test]
-// #[should_panic]
-// fn test_enum() {
-//     #[derive(Omit)]
-//     enum Foo {}
-// }

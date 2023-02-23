@@ -9,7 +9,7 @@ proc-macro = true
 [dependencies]
 darling = "0.14.3"
 quote = "1.0.23"
-syn = { version = "1.0.107", features = ["extra-traits"] }
+syn = { version = "1.0.107", features = ["extra-traits", "parsing", "derive"] }
 
 [dev-dependencies]
 assert_matches = "1.5.0"
