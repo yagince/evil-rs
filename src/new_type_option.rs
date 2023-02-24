@@ -1,17 +1,37 @@
-use syn::{parenthesized, parse::Parse, token::Paren, Ident, Path, Token};
+use syn::{parenthesized, parse::Parse, token::Paren, Attribute, Ident, Path, Token};
 
 mod kw {
     syn::custom_keyword!(derive);
 }
 
+pub(crate) fn extract_new_type(
+    attr_name: &str,
+    attrs: &[Attribute],
+) -> Result<Vec<NewTypeOption>, syn::Error> {
+    attrs
+        .iter()
+        .filter_map(|x| {
+            if x.path.is_ident(attr_name) {
+                Some(x)
+            } else {
+                None
+            }
+        })
+        .map(|x| match syn::parse2::<NewTypeOption>(x.tokens.clone()) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(syn::Error::new_spanned(x.path.clone(), e)),
+        })
+        .collect::<Result<Vec<_>, syn::Error>>()
+}
+
 #[derive(Debug, Clone, PartialEq)]
-pub(super) struct OmitOption {
+pub(super) struct NewTypeOption {
     pub name: Ident,
-    pub ignores: Vec<Ident>,
+    pub fields: Vec<Ident>,
     pub derive_option: Option<DeriveOption>,
 }
 
-impl Parse for OmitOption {
+impl Parse for NewTypeOption {
     /// e.g. (NewType, id, created_at, derive(Debug, Clone))
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let content;
@@ -40,9 +60,9 @@ impl Parse for OmitOption {
             }
         }
 
-        Ok(OmitOption {
+        Ok(NewTypeOption {
             name,
-            ignores,
+            fields: ignores,
             derive_option,
         })
     }
@@ -89,62 +109,62 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_omit_option_success() {
+    fn test_parse_new_type_option_success() {
         let token = quote! {
             (NewHoge, id, derive(Debug, Clone))
         };
         dbg!(&token);
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Ok(x) => {
             assert_eq!(x.name, "NewHoge");
-            assert_eq!(x.ignores, vec!["id"]);
+            assert_eq!(x.fields, vec!["id"]);
             assert_matches!(x.derive_option, Some(_));
         });
     }
 
     #[test]
-    fn test_parse_omit_option_no_derives() {
+    fn test_parse_new_type_option_no_derives() {
         let token = quote! {
             (NewHoge, id)
         };
         dbg!(&token);
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Ok(x) => {
             assert_eq!(x.name, "NewHoge");
-            assert_eq!(x.ignores, vec!["id"]);
+            assert_eq!(x.fields, vec!["id"]);
             assert_matches!(x.derive_option, None);
         });
     }
 
     #[test]
-    fn test_parse_omit_option_no_ignores() {
+    fn test_parse_new_type_option_no_ignores() {
         let token = quote! {
             (NewHoge,)
         };
         dbg!(&token);
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Ok(x) => {
             assert_eq!(x.name, "NewHoge");
-            assert_matches!(&x.ignores[..], []);
+            assert_matches!(&x.fields[..], []);
             assert_matches!(x.derive_option, None);
         });
     }
 
     #[test]
-    fn test_parse_omit_option_no_ignores_with_derives() {
+    fn test_parse_new_type_option_no_ignores_with_derives() {
         let token = quote::quote! {
             (NewHoge, derive(Debug, hoge::Clone))
         };
         dbg!(&token);
 
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Ok(x) => {
             assert_eq!(x.name, "NewHoge");
-            assert_matches!(&x.ignores[..], []);
+            assert_matches!(&x.fields[..], []);
             assert_matches!(x.derive_option, Some(DeriveOption { derives }) => {
                 assert_matches!(&derives[..], [_, _]);
             });
@@ -152,17 +172,17 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_omit_option_no_ignores_with_derives_2() {
+    fn test_parse_new_type_option_no_ignores_with_derives_2() {
         let token = quote::quote! {
             (NewHoge, id, derive(Debug, hoge::Clone), hoge)
         };
         dbg!(&token);
 
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Ok(x) => {
             assert_eq!(x.name, "NewHoge");
-            assert_eq!(x.ignores, vec!["id", "hoge"]);
+            assert_eq!(x.fields, vec!["id", "hoge"]);
             assert_matches!(x.derive_option, Some(DeriveOption { derives }) => {
                 assert_matches!(&derives[..], [_, _]);
             });
@@ -170,12 +190,12 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_omit_option_err() {
+    fn test_parse_new_type_option_err() {
         let token = quote! {
             (NewHoge, ,)
         };
         dbg!(&token);
-        let ret = syn::parse2::<OmitOption>(token);
+        let ret = syn::parse2::<NewTypeOption>(token);
 
         assert_matches!(ret, Err(_));
     }

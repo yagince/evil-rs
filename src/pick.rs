@@ -4,8 +4,8 @@ use syn::{DataStruct, DeriveInput, Field, Fields};
 
 use crate::new_type_option::extract_new_type;
 
-pub(crate) fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
-    let new_types = extract_new_type("omit", &item.attrs)?;
+pub(crate) fn gen_picked_type(item: DeriveInput) -> Result<TokenStream, syn::Error> {
+    let new_types = extract_new_type("pick", &item.attrs)?;
 
     let fields = if let syn::Data::Struct(DataStruct {
         fields: Fields::Named(ref fields),
@@ -16,7 +16,7 @@ pub(crate) fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Er
     } else {
         return Err(syn::Error::new_spanned(
             item.ident,
-            "`Omit` supports only `struct`",
+            "`Pick` supports only `struct`",
         ));
     };
 
@@ -26,7 +26,7 @@ pub(crate) fn gen_omitted_type(item: DeriveInput) -> Result<TokenStream, syn::Er
             let fields = fields
                 .iter()
                 .filter(|x| match x {
-                    Field { ident: Some(x), .. } => !opt.fields.contains(x),
+                    Field { ident: Some(x), .. } => opt.fields.contains(x),
                     _ => true,
                 })
                 .map(|field| quote!(#field))

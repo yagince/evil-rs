@@ -25,3 +25,27 @@ struct NewHoge {
     pub age: u64,
 }
 ```
+
+## derive(Pick)
+
+A new type can be automatically generated without the specified fields based on a specific type.
+It is inspired by [Pick](https://www.typescriptlang.org/docs/handbook/utility-types.html#picktype-keys) of TypeScript.
+``` rust
+use evil::Pick;
+
+#[derive(Pick, Debug)]
+#[pick(NewHoge, id, derive(Debug, Clone))]
+struct Hoge {
+    pub id: u64,
+    pub age: u64,
+}
+```
+
+The above code generates the following code.
+
+``` rust
+#[derive(Debug, Clone))]
+struct NewHoge {
+    pub id: u64,
+}
+```
